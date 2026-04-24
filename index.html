@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연산회 계모임 관리앱 V.1</title>
+    <style>
+        /* 화이트 테마 및 기본 레이아웃 설정 */
+        body { background-color: #f4f6f8; color: #333333; font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 15px; }
+        h1 { text-align: center; color: #111111; border-bottom: 2px solid #dddddd; padding-bottom: 10px; font-size: 24px; }
+        .tab-menu { display: flex; overflow-x: auto; white-space: nowrap; gap: 8px; margin-bottom: 20px; padding-bottom: 5px; }
+        .tab-menu::-webkit-scrollbar { height: 6px; }
+        .tab-menu::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .tab-btn { background-color: #ffffff; color: #333333; border: 1px solid #cccccc; padding: 10px 12px; cursor: pointer; border-radius: 5px; font-weight: bold; flex-shrink: 0; transition: 0.2s; }
+        .tab-btn:hover { background-color: #f0f0f0; }
+        .tab-btn.active { background-color: #2c3e50; color: #ffffff; border-color: #2c3e50; }
+        .tab-content { display: none; background-color: #ffffff; padding: 15px; border: 1px solid #dddddd; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .tab-content.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th, td { border: 1px solid #dddddd; padding: 6px; text-align: center; word-break: keep-all; }
+        th { background-color: #f0f2f5; color: #111; }
+        input[type="text"], input[type="date"], input[type="number"], textarea, select { background-color: #ffffff; color: #333333; border: 1px solid #cccccc; padding: 10px; border-radius: 4px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        input[type="file"] { background-color: #ffffff; padding: 8px; border: 1px dashed #aaa; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; background: #f9fafb; padding: 10px; border-radius: 5px; border: 1px solid #eeeeee; }
+        .submit-btn { background-color: #2c3e50; color: #ffffff; border: none; width: 100%; margin-top: 5px; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .submit-btn:hover { background-color: #1a252f; }
+        .section-divider { border-top: 2px dashed #cccccc; margin: 30px 0 20px 0; }
+        .history-card { background: #ffffff; border: 1px solid #dddddd; border-left: 4px solid #2c3e50; padding: 10px; margin-top: 10px; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .history-date { color: #666666; font-size: 12px; }
+        .result-board { margin-top: 15px; padding: 15px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 5px; }
+        .result-board h5 { margin: 0 0 10px 0; border-bottom: 1px solid #dee2e6; padding-bottom: 8px; font-size: 15px; }
+        .result-board p { margin: 5px 0; font-size: 13.5px; line-height: 1.4; }
+        .text-green { color: #28a745; font-weight: bold; }
+        .text-red { color: #dc3545; font-weight: bold; }
+        .text-bold { font-weight: bold; color: #111; }
+        .text-blue { color: #0056b3; font-weight: bold; }
+        .result-box { background-color:#f8f9fa; padding:10px; border-radius:4px; border:1px solid #e9ecef; font-size:13px; margin-top: 8px; }
+        .btn-sm { padding: 5px 8px; font-size: 12px; border-radius: 3px; border: none; color: white; cursor: pointer; margin: 2px 0; font-weight: bold; }
+        .btn-edit { background-color: #17a2b8; }
+        .btn-delete { background-color: #dc3545; }
+        .btn-confirm-sm { background-color: #28a745; }
+        .radio-group label { margin-right: 10px; cursor: pointer; }
+        .summary-board { background-color: #eef5ff; border: 1px solid #cce5ff; padding: 12px; border-radius: 5px; margin-bottom: 15px; text-align: center; }
+        .summary-board .total-count { font-size: 16px; font-weight: bold; margin-bottom: 5px; color: #111; }
+        .summary-board .role-breakdown { font-size: 13.5px; color: #555; }
+        
+        .photo-img { max-width: 100%; border-radius: 5px; margin-top: 8px; border: 1px solid #ddd; }
+        
+        /* 다중 체크박스 및 직접 입력칸 전용 스타일 */
+        .checkbox-container { display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 10px; background:#ffffff; padding:10px; border:1px solid #cccccc; border-radius:4px; max-height: 120px; overflow-y: auto; }
+        .checkbox-label { font-size:13px; cursor:pointer; background:#f0f2f5; padding:6px 12px; border-radius:20px; border:1px solid #dddddd; user-select: none; }
+        .checkbox-label:hover { background-color: #e2e6ea; }
+        .direct-input { display:none; margin-top:3px; border: 2px solid #17a2b8 !important; background-color: #f4ffff !important; }
+
+        /* 사다리/복불복 게임 스타일 */
+        #ladderCanvas { width: 100%; max-width: 400px; height: 300px; background-color: #fcfcfc; border: 1px solid #ccc; border-radius: 5px; margin-top: 10px; }
+        .ladder-result-text { margin-top: 15px; font-size: 15px; font-weight: bold; line-height: 1.6; text-align: center; background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px; }
+
+        .base-rules-container { background: #fafafa; border: 1px solid #ddd; padding: 15px; border-radius: 5px; height: 350px; overflow-y: auto; font-size: 13.5px; line-height: 1.6; margin-bottom: 20px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
+        .base-rules-container h3 { font-size: 16px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 20px; margin-bottom: 10px; }
+        .base-rules-container h3:first-child { margin-top: 0; }
+        .base-rules-container p { margin: 8px 0; }
+        .base-rules-container .rule-indent { padding-left: 15px; color: #555; }
+    </style>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <h1>연산회 계모임 관리앱 V.1</h1>
+
+    <div class="tab-menu">
+        <button class="tab-btn active" onclick="openTab('tab-rules')">1. 회칙</button>
+        <button class="tab-btn" onclick="openTab('tab-members')">2. 계원</button>
+        <button class="tab-btn" onclick="openTab('tab-presidents')">3. 역대 임원진</button>
+        <button class="tab-btn" onclick="openTab('tab-funds')">4. 계비현황</button>
+        <button class="tab-btn" onclick="openTab('tab-next')">5. 다음일정</button>
+        <button class="tab-btn" onclick="openTab('tab-records')">6. 모임기록</button>
+        <button class="tab-btn" onclick="openTab('tab-events')">7. 경조사</button>
+        <button class="tab-btn" onclick="openTab('tab-agenda')">8. 안건등록</button>
+        <button class="tab-btn" onclick="openTab('tab-photos')">9. 사진첩</button>
+        <button class="tab-btn" onclick="openTab('tab-games')">10. 기타</button>
+    </div>
+
+    <div id="tab-rules" class="tab-content active">
+        <h2 style="color: #0056b3;">📜 연산회 기본 회칙</h2>
+        <div class="base-rules-container">
+            <h3>1장. 총 칙</h3>
+            <p><b>제 1조 (명칭)</b> 본 회는 연산회 라 칭한다.</p>
+            <p><b>제 2조 (목적)</b> 본 회는 회원간의 친목을 도모하여 길·흉사가 유 할경우 적극 협조함을 목적으로 한다.</p>
+            <p><b>제 3조 (회비)</b> 본 회의 회비는 매월 모임통장으로 자동이체를 한다.</p>
+            <div class="rule-indent">
+                1. 정기 회비는 월 2만원 정 (₩20,000)으로 한다<br>
+                2. 납부는 매월 1일 자동이체를 권한다.<br>
+                3. 자동이체 여건이 안 될시, 최소 매년 6월, 12월 2회 중간정산을 원칙으로 한다.
+            </div>
+            <h3>2장. 회 원</h3>
+            <p><b>제 4조 (회원의 자격)</b> 본 회의 회원의 자격은 아래와 같다.</p>
+            <div class="rule-indent">
+                1. 본 회의 회칙을 동의 및 준수하고 제 2조에 해당하는 목적을 위해 노력하여야 한다.<br>
+                2. 회원은 발언권, 의결권, 선거권, 피 선거권을 가지며 회비부담과 회칙준수의 의무를 가지며 본 회가 주관하는 각종 행사 등에 대하여 당연 통보 되어야 한다.<br>
+                3. 회원은 언제든지 스스로 탈퇴 할 수 있으나, 회비는 돌려 받지 못한다.<br>
+                4. 1회 탈퇴한 회원은 재가입을 허용하지 않는다. <br>(단, 회원의 2/3이상 동의가 있을 경우 재가입을 고려 할 수 있다)
+            </div>
+            <p><b>제 5조 (회원의 의무)</b></p>
+            <div class="rule-indent">
+                1. 본 회의 회원은 회칙 및 규정을 준수하고 제 2조에 해당하는 본 회의 목적달성에 필요한 활동에 적극 참여 할 의무가 있으며 아래사항에 대하여 준수하여야 한다.<br>
+                2. 특별한 사유가 없는 한 본 회의 운영을 위한 모든 행사에 참가하여야 한다. <br>(단, 특별한 사유가 있을 경우, 사전에 운영진에게 그 사유를 밝혀야 한다.)
+            </div>
+            <p><b>제 6조 (회원의 구분 및 권한)</b> 회원은 본 회의 모임 참여, 기여도 등에 따라 다음과 같이 구분 한다.</p>
+            <div class="rule-indent">
+                1. <b>(회장)</b> 매년 본 회의 활동의 주체자이다. 일괄 통제할 수 있으며 정기 모임 회비 운영권을 가진다. 중요 결정사항에 제 1에 권한을 가진다.<br>
+                2. <b>(총무)</b> 매년 본 호의 활동의 주체자를 보조하며, 중요 결정사항에 제2에 권한을 가진다. 모임공지와 회장 부재 시, 그 권한을 대행하며 본 회의 회비수납 및 관련된 수입, 지출 등 재정을 담당한다.
+            </div>
+            <h3>제 3장. 총 회 (결산)</h3>
+            <p><b>제 7조 (총회)</b> 총회는 아래와 같이 구분한다.</p>
+            <div class="rule-indent">
+                1. 총회 (결산) 1년 2회로 정기 모임 시 개최하며, 운영진은 본 회 투표에 결정된 운영진과 회칙 개정 회계연도 결산, 재정 문제, 기타 중요한 안 건을 보고하며 송년회 및 신년회를 겸한다.
+            </div>
+            <h3>제 4장. 조 직</h3>
+            <p><b>제 8조 (임원진)</b> 본 회의 발전과 원활한 활동을 위하여 다음과 같이 조직을 둔다.</p>
+            <div class="rule-indent">
+                1. 구성 : 임원진 (회장, 총무), 회원<br>
+                2. 업무 및 권한 : 임원진은 다음사항에 대하여 심의 권한을 가진다.<br>
+                &nbsp;&nbsp;&nbsp;1) 정기모임계획<br>
+                &nbsp;&nbsp;&nbsp;2) 예산 및 결산<br>
+                &nbsp;&nbsp;&nbsp;3) 회칙 개정안 발의<br>
+                &nbsp;&nbsp;&nbsp;4) 기타 본 회의 중요한 사항<br>
+                3. 임시회의는 회원의 과반수 이상이 있을 시 회장이 소집한다.<br>
+                4. 자격정지 : 운영진 임원이 개인적 사정 및 기타사유로 업무수행을 할 수 없다고 판단 될 때는 회원의 과반수의 찬성으로 신임회장이 해당 임원의 자격을 상실시키며 7일 이내에 결원을 보충한다.<br>
+                5. 공지 : 운영진 회의에 관련된 결과는 즉시 회원들에게 공지한다.
+            </div>
+            <p><b>제 9조 (임원진의 선임 및 임기)</b></p>
+            <div class="rule-indent">
+                1. 임원진의 임기는 2년이다.<br>
+                2. 임원진은 총회에서 회원들의 직접, 간접, 투표를 통해서 총회에서 선임한다. <br>(단, 모든 회원이 찬성 할 시, 전임 임원진이 신임 임원직을 선임 할 수 있다.)
+            </div>
+            <h3>제 5장. 모 임</h3>
+            <p><b>제 10조 (정기모임)</b></p>
+            <div class="rule-indent">
+                1. 1년 2회 정기 모임을 가진다.<br>
+                2. 정기모임 일시,장소는 임원진이 정하되, 사전에 전 회원들에게 통지되어여 하며, 임기동안 같은 지역에서 모임은 허용하지 않는다.<br>
+                3. 정기모임에 사용되는 회비는 12만원(연간/인당)이며, 이유불문하고 회비는 돌려받지 못한다.<br>
+                4. 정기모임간 발생한 교통비는 회원 개인 사비로 부담한다.<br>
+                5. 정기모임은 회원 본인 (1인) 외 에는 참석을 불허한다.
+            </div>
+            <h3>제 6장. 경조사비</h3>
+            <p><b>제 11조 (경조사비)</b> 본 회의 회원 중 길·흉사가 유할 시는 아래와 같이 부조하며, 참석하여 축하 및 조문 하여야 한다.</p>
+            <div class="rule-indent">
+                1. <b>회원의 결혼</b> : 사비 ₩200,000/인당 (총 ₩2,600,000), 회비 ₩400,000 + 화환 1EA<br>
+                &nbsp;&nbsp;&nbsp;- 재혼은 해당사항 없음<br>
+                2. <b>자녀의 돌</b> : 사비 ₩100,000/인당 (총 ₩1,300,000), 회비 금 1돈 (시가 적용)<br>
+                &nbsp;&nbsp;&nbsp;- 자녀돌은 1회만 적용<br>
+                3. <b>직계부모사망</b> : 사비 ₩200,000/인당 (총 ₩2,600,000), 회비 ₩400,000 + 조화 1EA<br>
+                4. <b>부모칠순</b> : 사비 ₩50,000/인당 (총 ₩650,000), 회비 ₩150,000<br>
+                &nbsp;&nbsp;&nbsp;- 부,모 중 1회만 적용<br>
+                &nbsp;&nbsp;&nbsp;- 부,모 모두 칠순전 사망 시, 직계부모 사망 조의금에 더하여 지급.<br>
+                5. <b>본인사망</b> : 사비 ₩200,000/인당 (총 ₩2,600,000), 회비 조화 1EA (현재, 보유금액의 1/N 직계가족 상속)
+            </div>
+            <h3>제 7장. 재정</h3>
+            <p><b>제 12조 (재정관리)</b></p>
+            <div class="rule-indent">
+                1. 수입 : 본 회 회비로 하며 총무가 관리한다.<br>
+                2. 지출 : 본 회의 경, 조사 및 공동물품, 운영상의 물품 구매 시 운영진의 사전 심의 후 지출하며 구매 후 회원들에게 통지한다.<br>
+                3. 보관 : 회비는 은행통장에 예치하고 총무가 관리한다.<br>
+                4. 보고 : 수입과 지출은 정기 모임때 게재한다.<br><br>
+                <span style="color:#d35400;">※ 본 회비는 일체 대출 할 수 없으며, 전액 통장 관리한다.</span>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+        <h2>✍️ 개정 및 추가 기록</h2>
+        <div class="input-group">
+            <textarea id="ruleContent" rows="4" placeholder="기본 회칙 외에 새롭게 개정되거나 추가된 사항을 기록하세요."></textarea>
+            <button class="submit-btn" onclick="addRule()">개정 사항 등록/저장</button>
+        </div>
+        <div id="ruleHistoryList"></div>
+    </div>
+
+    <div id="tab-members" class="tab-content">
+        <h2>계원 명부</h2>
+        <div id="memberSummaryBoard" class="summary-board"></div>
+        <div class="input-group">
+            <input type="text" id="memberName" placeholder="이름 (예: 홍길동)">
+            <input type="text" id="memberRole" placeholder="직책 (예: 회장, 총무, 계원)">
+            <button class="submit-btn" onclick="addMember()">계원 추가/저장</button>
+        </div>
+        <table>
+            <thead><tr><th>이름</th><th>직책</th><th>관리</th></tr></thead>
+            <tbody id="memberList"></tbody>
+        </table>
+    </div>
+
+    <div id="tab-presidents" class="tab-content">
+        <h2>역대 임원진</h2>
+        <div class="input-group">
+            <input type="text" id="presYear" placeholder="년도 (예: 2026)">
+            
+            <div style="font-size: 13px; color: #555; margin-bottom: -3px; font-weight:bold;">👑 회장</div>
+            <select id="presidentName" onchange="toggleDirectInput(this, 'presidentNameDirect')"><option value="">회장 선택</option></select>
+            <input type="text" id="presidentNameDirect" class="direct-input" placeholder="회장 이름 직접 입력">
+            
+            <div style="font-size: 13px; color: #555; margin-bottom: -3px; margin-top:5px; font-weight:bold;">💼 총무</div>
+            <select id="secretaryName" onchange="toggleDirectInput(this, 'secretaryNameDirect')"><option value="">총무 선택</option></select>
+            <input type="text" id="secretaryNameDirect" class="direct-input" placeholder="총무 이름 직접 입력">
+            
+            <button class="submit-btn" onclick="addPresident()">임원진 추가/저장</button>
+        </div>
+        <table>
+            <thead><tr><th>년도</th><th>회장</th><th>총무</th><th>관리</th></tr></thead>
+            <tbody id="presidentList"></tbody>
+        </table>
+    </div>
+
+    <div id="tab-funds" class="tab-content">
+        <h2>계비 현황</h2>
+        <h3 style="text-align: center;">총 잔액: <span id="totalFund" class="text-green">0</span> 원</h3>
+        <div class="input-group">
+            <input type="date" id="fundDate">
+            <select id="fundType">
+                <option value="income">수입 (+)</option>
+                <option value="expense">지출 (-)</option>
+            </select>
+            <input type="text" id="fundDesc" placeholder="내역 (예: 4월 회비, 식대)">
+            <input type="number" id="fundAmount" placeholder="금액 (숫자만 입력)">
+            <button class="submit-btn" onclick="addFund()">내역 추가/저장</button>
+        </div>
+        <table>
+            <thead><tr><th>일자</th><th>분류</th><th>내역</th><th>금액</th><th>관리</th></tr></thead>
+            <tbody id="fundList"></tbody>
+        </table>
+    </div>
+
+    <div id="tab-next" class="tab-content">
+        <h2>다음계모임 일정</h2>
+        <div class="input-group">
+            <input type="date" id="nextDate">
+            <input type="text" id="nextLocation" placeholder="모임 장소">
+            <button class="submit-btn" onclick="setNextMeeting()">일정 공지하기</button>
+        </div>
+        <div id="nextMeetingInfo" class="history-card" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div id="nextMeetingDetails" style="margin-bottom: 15px; font-weight: bold; color: #111;"></div>
+                <button class="btn-sm btn-delete" onclick="cancelNextMeeting()">일정 취소</button>
+            </div>
+            <h4 style="margin-top: 0; border-top: 1px solid #eee; padding-top: 10px;">계원 참석 투표</h4>
+            <table style="margin-top:0;">
+                <thead><tr><th>이름</th><th>선택</th><th>확인</th></tr></thead>
+                <tbody id="rsvpList"></tbody>
+            </table>
+            <div id="rsvpResultBoard" class="result-board"></div>
+        </div>
+    </div>
+
+    <div id="tab-records" class="tab-content">
+        <h2>과거 모임 기록</h2>
+        <div class="input-group">
+            <input type="date" id="recDate">
+            <input type="text" id="recLocation" placeholder="장소">
+            
+            <div style="font-size: 13px; color: #555; font-weight:bold; margin-top: 5px;">👥 참가자 선택</div>
+            <div id="recAttendeesCheckboxes" class="checkbox-container"></div>
+            <label style="font-size:13px; display:inline-block;"><input type="checkbox" id="recAttDirectCheck" onchange="toggleDirectCheck(this, 'recAttDirect')"> 외부인/기타 직접 입력</label>
+            <input type="text" id="recAttDirect" class="direct-input" placeholder="이름 입력 (여러 명일 경우 쉼표로 구분)">
+
+            <textarea id="recAgenda" rows="3" placeholder="회의 안건 및 결과"></textarea>
+            <button class="submit-btn" onclick="addRecord()">기록 추가/저장</button>
+        </div>
+        <div id="recordHistoryList"></div>
+    </div>
+
+    <div id="tab-events" class="tab-content">
+        <h2 style="color: #0056b3;">📅 다음 경조사 예정</h2>
+        <div class="input-group" style="background-color: #eef5ff; border-color: #cce5ff;">
+            <input type="date" id="upEventDate">
+            <select id="upEventName" onchange="toggleDirectInput(this, 'upEventNameDirect')"><option value="">해당 회원 선택</option></select>
+            <input type="text" id="upEventNameDirect" class="direct-input" placeholder="이름 직접 입력">
+            <input type="text" id="upEventDesc" placeholder="경조사 내용 (예: 장남 결혼식)">
+            <button class="submit-btn" style="background-color: #0056b3;" onclick="addUpEvent()">예정 일정 추가/저장</button>
+        </div>
+        <table>
+            <thead><tr><th>예정일</th><th>회원</th><th>내용</th><th>관리</th></tr></thead>
+            <tbody id="upEventList"></tbody>
+        </table>
+        <div class="section-divider"></div>
+        <h2>💳 경조사 지급 기록</h2>
+        <div class="input-group">
+            <input type="date" id="eventDate">
+            <select id="eventName" onchange="toggleDirectInput(this, 'eventNameDirect')"><option value="">해당 회원 선택</option></select>
+            <input type="text" id="eventNameDirect" class="direct-input" placeholder="이름 직접 입력">
+            <input type="text" id="eventDesc" placeholder="지급 내용 (예: 빙모상 조의금)">
+            <input type="number" id="eventAmount" placeholder="지급 금액 (숫자만 입력)">
+            <button class="submit-btn" onclick="addEvent()">지급 기록 추가/저장</button>
+        </div>
+        <table>
+            <thead><tr><th>지급일</th><th>회원</th><th>내용</th><th>지급금액</th><th>관리</th></tr></thead>
+            <tbody id="eventList"></tbody>
+        </table>
+    </div>
+
+    <div id="tab-agenda" class="tab-content">
+        <h2>회의 안건 등록</h2>
+        <div class="input-group">
+            <input type="date" id="agendaDate">
+            <select id="agendaName" onchange="toggleDirectInput(this, 'agendaNameDirect')"><option value="">발의자 선택</option></select>
+            <input type="text" id="agendaNameDirect" class="direct-input" placeholder="발의자 직접 입력">
+            <textarea id="agendaContent" rows="3" placeholder="안건 내용 (어떤 내용을 논의할 것인지 작성)"></textarea>
+            <textarea id="agendaResult" rows="3" placeholder="회의 결과 (투표 결과나 최종 결정된 사항을 작성 / 미결정시 비워둠)"></textarea>
+            <button class="submit-btn" onclick="addAgenda()">안건 추가/저장</button>
+        </div>
+        <div id="agendaHistoryList"></div>
+    </div>
+
+    <div id="tab-photos" class="tab-content">
+        <h2>📸 연산회 사진첩</h2>
+        <p style="font-size:12px; color:#666;">※ 스마트폰 사진을 올리면 자동으로 용량이 압축되어 저장됩니다.</p>
+        <div class="input-group">
+            <input type="file" id="photoInput" accept="image/*">
+            <input type="text" id="photoDesc" placeholder="사진에 대한 간단한 설명 (예: 2026년 봄 야유회)">
+            <button id="photoUploadBtn" class="submit-btn" onclick="uploadPhoto()">사진 올리기</button>
+        </div>
+        <div id="photoGallery"></div>
+    </div>
+
+    <div id="tab-games" class="tab-content">
+        <h2>🎲 기타 (복불복 게임)</h2>
+        <p style="font-size:12px; color:#666;">※ 참가할 계원을 선택한 뒤 원하는 게임을 즐겨보세요!</p>
+        <div class="input-group">
+            <div style="font-size: 13px; color: #555; font-weight:bold; margin-bottom: 5px;">👥 게임 참가자 선택</div>
+            <div id="gameMembersCheckboxes" class="checkbox-container"></div>
+            <label style="font-size:13px; display:inline-block;"><input type="checkbox" id="gameMemDirectCheck" onchange="toggleDirectCheck(this, 'gameMemDirect')"> 외부인/기타 직접 입력</label>
+            <input type="text" id="gameMemDirect" class="direct-input" placeholder="참가자 입력 (여러 명일 경우 쉼표로 구분)">
+            
+            <select id="gameTypeSelect" onchange="toggleGameUI()" style="border-color: #2980b9; background-color: #ebf5fb; font-weight:bold; margin-top: 10px;">
+                <option value="ladder">🪜 사다리 타기 (벌칙 여러 개 지정)</option>
+                <option value="bomb">💣 폭탄 돌리기 (1명 무작위 추첨)</option>
+            </select>
+
+            <div id="ladderInputArea">
+                <input type="text" id="ladderPenalties" placeholder="결과 (예: 설거지,통과,통과) *참가자 수와 맞추세요">
+                <button class="submit-btn" style="background-color: #d35400;" onclick="startLadderGame()">사다리 게임 시작!</button>
+            </div>
+
+            <div id="bombInputArea" style="display:none;">
+                <input type="text" id="bombPenalty" placeholder="당첨 벌칙 (예: 이번 모임 커피 쏘기)">
+                <button class="submit-btn" style="background-color: #c0392b;" onclick="startBombGame()">폭탄 돌리기 시작!</button>
+            </div>
+        </div>
+        
+        <div id="ladderArea" style="display:none; text-align: center;">
+            <canvas id="ladderCanvas" width="400" height="300"></canvas>
+            <button class="submit-btn" style="background-color: #28a745; margin-top: 15px;" onclick="showLadderResult()">누가 걸렸을까? 결과 보기</button>
+            <div id="ladderResultBox" class="ladder-result-text" style="display:none;"></div>
+        </div>
+
+        <div id="bombArea" style="display:none; text-align: center;">
+            <div id="bombAnimation" style="font-size: 50px; margin: 30px 0;">💣</div>
+            <div id="bombResultBox" class="ladder-result-text" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // ----------------------------------------------------
+        // 파이어베이스 클라우드 연결
+        // ----------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyCfDZZ7DNsWvdk5nNGg11EW3ry1hXVXa70",
+            authDomain: "ys-group-1e2ad.firebaseapp.com",
+            databaseURL: "https://ys-group-1e2ad-default-rtdb.firebaseio.com",
+            projectId: "ys-group-1e2ad",
+            storageBucket: "ys-group-1e2ad.firebasestorage.app",
+            messagingSenderId: "1008651989848",
+            appId: "1:1008651989848:web:f9262617e751fb36486b2d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const dataRef = db.ref('yeonsanAppCloudData'); 
+
+        let appData = {
+            rules: [], members: [], presidents: [], funds: [], nextMeeting: null, records: [], events: [], upcomingEvents: [], agendas: [], photos: []
+        };
+
+        dataRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                appData = data;
+                if (!appData.rules) appData.rules = [];
+                if (!appData.members) appData.members = [];
+                if (!appData.presidents) appData.presidents = [];
+                if (!appData.funds) appData.funds = [];
+                if (!appData.records) appData.records = [];
+                if (!appData.events) appData.events = [];
+                if (!appData.upcomingEvents) appData.upcomingEvents = [];
+                if (!appData.agendas) appData.agendas = [];
+                if (!appData.photos) appData.photos = [];
+            }
+            renderAll(); 
+        });
+
+        function saveData() { dataRef.set(appData); }
+
+        function openTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function getToday() {
+            const today = new Date();
+            return `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        }
+
+        // ====== 직접 입력 UI 제어 로직 ======
+        function toggleDirectInput(selectElem, inputId) {
+            const inputElem = document.getElementById(inputId);
+            if (selectElem.value === '직접입력') { inputElem.style.display = 'block'; } 
+            else { inputElem.style.display = 'none'; inputElem.value = ''; }
+        }
+        function toggleDirectCheck(checkElem, inputId) {
+            const inputElem = document.getElementById(inputId);
+            if (checkElem.checked) { inputElem.style.display = 'block'; } 
+            else { inputElem.style.display = 'none'; inputElem.value = ''; }
+        }
+        function getFinalValue(selectId, directId) {
+            const val = document.getElementById(selectId).value;
+            if(val === '직접입력') {
+                const directVal = document.getElementById(directId).value.trim();
+                return directVal ? directVal : '';
+            }
+            return val;
+        }
+        function setEditDropdown(selectId, directId, val) {
+            let el = document.getElementById(selectId);
+            let exists = Array.from(el.options).some(opt => opt.value === val);
+            if(exists && val !== '직접입력') {
+                el.value = val;
+                document.getElementById(directId).style.display = 'none';
+            } else {
+                if(val) {
+                    el.value = '직접입력';
+                    document.getElementById(directId).style.display = 'block';
+                    document.getElementById(directId).value = val;
+                } else {
+                    el.value = '';
+                    document.getElementById(directId).style.display = 'none';
+                }
+            }
+        }
+
+        // ====== 체크박스 상태 보존 업데이트 ======
+        function updateCheckboxes(containerId, checkboxName) {
+            const container = document.getElementById(containerId);
+            if(!container) return;
+            const checkedVals = Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
+            const html = appData.members.map(m => {
+                const isChecked = checkedVals.includes(m.name) ? 'checked' : '';
+                return `<label class="checkbox-label"><input type="checkbox" name="${checkboxName}" value="${m.name}" ${isChecked}> ${m.name}</label>`;
+            }).join('');
+            container.innerHTML = html;
+        }
+
+        function updateMemberSelects() {
+            const optionsHTML = '<option value="">선택하세요</option>' + 
+                appData.members.map(m => `<option value="${m.name}">${m.name}</option>`).join('') +
+                '<option value="직접입력">✏️ 직접 입력 (외부인 등)</option>';
+
+            ['presidentName', 'secretaryName', 'upEventName', 'eventName', 'agendaName'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const currentVal = el.value; 
+                    el.innerHTML = optionsHTML;
+                    if (currentVal) {
+                        let exists = Array.from(el.options).some(opt => opt.value === currentVal);
+                        if (exists) { el.value = currentVal; } 
+                        else if (currentVal !== '') { el.value = currentVal === '직접입력' ? '직접입력' : ''; }
+                    }
+                }
+            });
+            updateCheckboxes('recAttendeesCheckboxes', 'recAtt');
+            updateCheckboxes('gameMembersCheckboxes', 'gameMember');
+        }
+
+        // 1~5 탭
+        function addRule() { const c = document.getElementById('ruleContent').value; if (c) { appData.rules.unshift({ date: getToday(), text: c }); document.getElementById('ruleContent').value = ''; saveData(); } }
+        function deleteRule(i) { if(confirm('삭제하시겠습니까?')) { appData.rules.splice(i, 1); saveData(); } }
+        function editRule(i) { document.getElementById('ruleContent').value = appData.rules[i].text; appData.rules.splice(i, 1); saveData(); alert('상단 입력창으로 불러왔습니다.'); window.scrollTo(0,0); }
+
+        function addMember() { const n = document.getElementById('memberName').value; const r = document.getElementById('memberRole').value; if (n) { appData.members.push({name: n, role: r, rsvp: '미정'}); document.getElementById('memberName').value = ''; document.getElementById('memberRole').value = ''; saveData(); } }
+        function deleteMember(i) { if(confirm('삭제하시겠습니까?')) { appData.members.splice(i, 1); saveData(); } }
+        function editMember(i) { document.getElementById('memberName').value = appData.members[i].name; document.getElementById('memberRole').value = appData.members[i].role; appData.members.splice(i, 1); saveData(); alert('수정 후 다시 저장해주세요.'); window.scrollTo(0,0); }
+
+        function addPresident() { 
+            const y = document.getElementById('presYear').value; 
+            const p = getFinalValue('presidentName', 'presidentNameDirect');
+            const s = getFinalValue('secretaryName', 'secretaryNameDirect');
+            if (y && (p || s)) { 
+                appData.presidents.push({year: y, president: p, secretary: s}); 
+                document.getElementById('presYear').value = ''; 
+                document.getElementById('presidentName').value = ''; document.getElementById('presidentNameDirect').style.display='none';
+                document.getElementById('secretaryName').value = ''; document.getElementById('secretaryNameDirect').style.display='none';
+                saveData(); 
+            } else { alert('년도와 임원 이름을 하나 이상 선택/입력해주세요.'); }
+        }
+        function deletePresident(i) { if(confirm('삭제하시겠습니까?')) { appData.presidents.splice(i, 1); saveData(); } }
+        function editPresident(i) { 
+            document.getElementById('presYear').value = appData.presidents[i].year || ''; 
+            setEditDropdown('presidentName', 'presidentNameDirect', appData.presidents[i].president || appData.presidents[i].name || '');
+            setEditDropdown('secretaryName', 'secretaryNameDirect', appData.presidents[i].secretary || '');
+            appData.presidents.splice(i, 1); saveData(); alert('상단 입력창에서 수정 후 다시 저장해주세요.'); window.scrollTo(0,0);
+        }
+
+        function addFund() { const d = document.getElementById('fundDate').value; const t = document.getElementById('fundType').value; const de = document.getElementById('fundDesc').value; const a = parseInt(document.getElementById('fundAmount').value); if (d && de && a) { appData.funds.push({date: d, type: t, desc: de, amount: a}); document.getElementById('fundDesc').value = ''; document.getElementById('fundAmount').value = ''; saveData(); } }
+        function deleteFund(i) { if(confirm('삭제 시 잔액이 변경됩니다.')) { appData.funds.splice(i, 1); saveData(); } }
+        function editFund(i) { document.getElementById('fundDate').value = appData.funds[i].date; document.getElementById('fundType').value = appData.funds[i].type; document.getElementById('fundDesc').value = appData.funds[i].desc; document.getElementById('fundAmount').value = appData.funds[i].amount; appData.funds.splice(i, 1); saveData(); alert('수정 후 다시 저장해주세요.'); window.scrollTo(0,0); }
+
+        function setNextMeeting() { const d = document.getElementById('nextDate').value; const l = document.getElementById('nextLocation').value; if (d && l) { appData.nextMeeting = { date: d, loc: l }; appData.members.forEach(m => m.rsvp = '미정'); saveData(); } }
+        function cancelNextMeeting() { if(confirm('일정을 취소하시겠습니까?')) { appData.nextMeeting = null; saveData(); } }
+        function confirmSingleRsvp(index) { const radios = document.getElementsByName('rsvp' + index); let val = null; for (let r of radios) { if (r.checked) { val = r.value; break; } } if (val) { appData.members[index].rsvp = val; saveData(); } else { alert('참석 여부를 선택해주세요.'); } }
+
+        // 6. 모임기록 (체크박스 + 직접입력 연동)
+        function addRecord() { 
+            const d = document.getElementById('recDate').value; 
+            const l = document.getElementById('recLocation').value; 
+            const ag = document.getElementById('recAgenda').value; 
+            
+            const checkboxes = document.querySelectorAll('input[name="recAtt"]:checked');
+            let attendeesArray = Array.from(checkboxes).map(cb => cb.value);
+            
+            if(document.getElementById('recAttDirectCheck').checked) {
+                const directStr = document.getElementById('recAttDirect').value.trim();
+                if(directStr) {
+                    const directArr = directStr.split(',').map(s=>s.trim()).filter(s=>s);
+                    attendeesArray = attendeesArray.concat(directArr);
+                }
+            }
+            const a = attendeesArray.join(', ');
+            
+            if (d && l && a) { 
+                appData.records.unshift({date: d, loc: l, att: a, agenda: ag}); 
+                document.getElementById('recLocation').value = ''; 
+                document.getElementById('recAgenda').value = ''; 
+                document.querySelectorAll('input[name="recAtt"]').forEach(cb => cb.checked = false);
+                document.getElementById('recAttDirectCheck').checked = false;
+                document.getElementById('recAttDirect').style.display = 'none';
+                document.getElementById('recAttDirect').value = '';
+                saveData(); 
+            } else { alert('장소와 참가자(최소 1명 이상 선택/입력)를 확인해주세요.'); }
+        }
+        function deleteRecord(i) { if(confirm('삭제하시겠습니까?')) { appData.records.splice(i, 1); saveData(); } }
+        function editRecord(i) { 
+            document.getElementById('recDate').value = appData.records[i].date; 
+            document.getElementById('recLocation').value = appData.records[i].loc; 
+            document.getElementById('recAgenda').value = appData.records[i].agenda; 
+            
+            const attString = appData.records[i].att || '';
+            const attArray = attString.split(',').map(s=>s.trim());
+            let directInputs = [];
+            const allMemberNames = appData.members.map(m=>m.name);
+            
+            document.querySelectorAll('input[name="recAtt"]').forEach(cb => {
+                if(attArray.includes(cb.value)) { cb.checked = true; } else { cb.checked = false; }
+            });
+            
+            attArray.forEach(name => {
+                if(!allMemberNames.includes(name)) { directInputs.push(name); }
+            });
+            
+            if(directInputs.length > 0) {
+                document.getElementById('recAttDirectCheck').checked = true;
+                document.getElementById('recAttDirect').style.display = 'block';
+                document.getElementById('recAttDirect').value = directInputs.join(', ');
+            } else {
+                document.getElementById('recAttDirectCheck').checked = false;
+                document.getElementById('recAttDirect').style.display = 'none';
+                document.getElementById('recAttDirect').value = '';
+            }
+
+            appData.records.splice(i, 1); saveData(); alert('상단으로 불러왔습니다. 수정 후 저장해주세요.'); window.scrollTo(0,0); 
+        }
+
+        // 7, 8 탭
+        function addUpEvent() { const d = document.getElementById('upEventDate').value; const n = getFinalValue('upEventName','upEventNameDirect'); const de = document.getElementById('upEventDesc').value; if (d && n && de) { appData.upcomingEvents.push({date: d, name: n, desc: de}); appData.upcomingEvents.sort((a, b) => new Date(a.date) - new Date(b.date)); document.getElementById('upEventName').value = ''; document.getElementById('upEventNameDirect').style.display='none'; document.getElementById('upEventDesc').value = ''; saveData(); } else { alert('모두 선택/입력해주세요.'); } }
+        function deleteUpEvent(i) { if(confirm('삭제하시겠습니까?')) { appData.upcomingEvents.splice(i, 1); saveData(); } }
+        function editUpEvent(i) { document.getElementById('upEventDate').value = appData.upcomingEvents[i].date; setEditDropdown('upEventName', 'upEventNameDirect', appData.upcomingEvents[i].name); document.getElementById('upEventDesc').value = appData.upcomingEvents[i].desc; appData.upcomingEvents.splice(i, 1); saveData(); alert('상단으로 불러왔습니다.'); window.scrollTo(0,0); }
+
+        function addEvent() { const d = document.getElementById('eventDate').value; const n = getFinalValue('eventName', 'eventNameDirect'); const de = document.getElementById('eventDesc').value; const a = parseInt(document.getElementById('eventAmount').value); if (d && n && de && a) { appData.events.unshift({date: d, name: n, desc: de, amount: a}); document.getElementById('eventName').value = ''; document.getElementById('eventNameDirect').style.display='none'; document.getElementById('eventDesc').value = ''; document.getElementById('eventAmount').value = ''; saveData(); } else { alert('모두 선택/입력해주세요.'); } }
+        function deleteEvent(i) { if(confirm('삭제하시겠습니까?')) { appData.events.splice(i, 1); saveData(); } }
+        function editEvent(i) { document.getElementById('eventDate').value = appData.events[i].date; setEditDropdown('eventName', 'eventNameDirect', appData.events[i].name); document.getElementById('eventDesc').value = appData.events[i].desc; document.getElementById('eventAmount').value = appData.events[i].amount; appData.events.splice(i, 1); saveData(); alert('상단으로 불러왔습니다.'); window.scrollTo(0,0); }
+
+        function addAgenda() { const d = document.getElementById('agendaDate').value; const n = getFinalValue('agendaName', 'agendaNameDirect'); const c = document.getElementById('agendaContent').value; const r = document.getElementById('agendaResult').value; if (d && n && c) { appData.agendas.unshift({date: d, name: n, content: c, result: r}); document.getElementById('agendaName').value = ''; document.getElementById('agendaNameDirect').style.display='none'; document.getElementById('agendaContent').value = ''; document.getElementById('agendaResult').value = ''; saveData(); } else { alert('필수 항목을 모두 선택/입력해주세요.'); } }
+        function deleteAgenda(i) { if(confirm('삭제하시겠습니까?')) { appData.agendas.splice(i, 1); saveData(); } }
+        function editAgenda(i) { document.getElementById('agendaDate').value = appData.agendas[i].date; setEditDropdown('agendaName', 'agendaNameDirect', appData.agendas[i].name); document.getElementById('agendaContent').value = appData.agendas[i].content; document.getElementById('agendaResult').value = appData.agendas[i].result; appData.agendas.splice(i, 1); saveData(); alert('상단으로 불러왔습니다.'); window.scrollTo(0,0); }
+
+        // 9. 사진첩 수정 로직 완전체
+        let editingPhotoIndex = null;
+        function uploadPhoto() {
+            const fileInput = document.getElementById('photoInput');
+            const desc = document.getElementById('photoDesc').value;
+            
+            if (fileInput.files.length === 0) {
+                if (editingPhotoIndex !== null) {
+                    appData.photos[editingPhotoIndex].desc = desc; 
+                    saveData(); resetPhotoInput(); alert('사진 설명이 성공적으로 수정되었습니다.'); return;
+                } else { alert('업로드할 사진을 선택해주세요.'); return; }
+            }
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
+                    let width = img.width; let height = img.height;
+                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                    else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6); 
+                    
+                    if(!appData.photos) appData.photos = [];
+                    if (editingPhotoIndex !== null) {
+                        appData.photos[editingPhotoIndex].desc = desc;
+                        appData.photos[editingPhotoIndex].image = dataUrl;
+                    } else {
+                        appData.photos.unshift({ date: getToday(), desc: desc, image: dataUrl }); 
+                    }
+                    saveData(); resetPhotoInput(); alert('성공적으로 저장되었습니다.');
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+        function deletePhoto(i) { if(confirm('이 사진을 삭제하시겠습니까?')) { appData.photos.splice(i, 1); saveData(); } }
+        function editPhoto(i) {
+            editingPhotoIndex = i;
+            document.getElementById('photoDesc').value = appData.photos[i].desc || '';
+            document.getElementById('photoUploadBtn').innerText = '📸 사진 수정 완료 (사진/설명 변경 가능)';
+            document.getElementById('photoUploadBtn').style.backgroundColor = '#17a2b8';
+            window.scrollTo(0,0);
+            alert('상단의 입력창을 확인해주세요.\n새로운 사진 파일로 교체하시거나, 설명만 고친 뒤 [수정 완료] 버튼을 누르시면 됩니다.');
+        }
+        function resetPhotoInput() {
+            document.getElementById('photoInput').value = ''; 
+            document.getElementById('photoDesc').value = '';
+            document.getElementById('photoUploadBtn').innerText = '사진 올리기';
+            document.getElementById('photoUploadBtn').style.backgroundColor = '#2c3e50';
+            editingPhotoIndex = null;
+        }
+
+        // 10. 기타 (복불복 게임)
+        function toggleGameUI() {
+            const type = document.getElementById('gameTypeSelect').value;
+            if(type === 'ladder') {
+                document.getElementById('ladderInputArea').style.display = 'block';
+                document.getElementById('bombInputArea').style.display = 'none';
+            } else {
+                document.getElementById('ladderInputArea').style.display = 'none';
+                document.getElementById('bombInputArea').style.display = 'block';
+            }
+            document.getElementById('ladderArea').style.display = 'none';
+            document.getElementById('bombArea').style.display = 'none';
+        }
+
+        function getSelectedGameMembers() {
+            const checkboxes = document.querySelectorAll('input[name="gameMember"]:checked');
+            let arr = Array.from(checkboxes).map(cb => cb.value);
+            if(document.getElementById('gameMemDirectCheck').checked) {
+                const directStr = document.getElementById('gameMemDirect').value.trim();
+                if(directStr) {
+                    const directArr = directStr.split(',').map(s=>s.trim()).filter(s=>s);
+                    arr = arr.concat(directArr);
+                }
+            }
+            return arr;
+        }
+
+        function startLadderGame() {
+            const names = getSelectedGameMembers();
+            const penaltiesStr = document.getElementById('ladderPenalties').value;
+            if(names.length < 2) { alert('체크박스/직접입력으로 참가자를 2명 이상 선택해주세요.'); return; }
+            if(!penaltiesStr) { alert('결과(벌칙)를 적어주세요.'); return; }
+            
+            const results = penaltiesStr.split(',').map(s=>s.trim()).filter(s=>s);
+            if(names.length !== results.length) { alert(`선택된 참가자 수(${names.length}명)와 결과 수(${results.length}개)가 똑같아야 합니다!`); return; }
+            
+            const cols = names.length; const rungs = [];
+            const numRungs = cols * 2 + Math.floor(Math.random() * cols); 
+            for(let i=0; i<numRungs; i++) { rungs.push({ col: Math.floor(Math.random() * (cols - 1)), y: 0.1 + Math.random() * 0.8 }); }
+            rungs.sort((a,b) => a.y - b.y);
+            
+            currentLadderObj = { names, results, rungs };
+            document.getElementById('bombArea').style.display = 'none';
+            document.getElementById('ladderArea').style.display = 'block';
+            document.getElementById('ladderResultBox').style.display = 'none';
+            drawLadder();
+        }
+
+        function drawLadder() {
+            if(!currentLadderObj) return;
+            const canvas = document.getElementById('ladderCanvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width; const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+            const cols = currentLadderObj.names.length;
+            const colW = w / cols;
+            const startY = 30; const endY = h - 30;
+            ctx.font = '14px Malgun Gothic'; ctx.textAlign = 'center'; ctx.fillStyle = '#111';
+            
+            for(let i=0; i<cols; i++) {
+                let x = colW * i + colW/2;
+                ctx.fillText(currentLadderObj.names[i], x, 20); ctx.fillText('?', x, h - 10); 
+                ctx.beginPath(); ctx.moveTo(x, startY); ctx.lineTo(x, endY);
+                ctx.strokeStyle = '#ccc'; ctx.lineWidth = 3; ctx.stroke();
+            }
+            ctx.strokeStyle = '#666';
+            currentLadderObj.rungs.forEach(rung => {
+                let x1 = colW * rung.col + colW/2; let x2 = colW * (rung.col + 1) + colW/2;
+                let y = startY + rung.y * (endY - startY);
+                ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+            });
+        }
+
+        function showLadderResult() {
+            if(!currentLadderObj) return;
+            const names = currentLadderObj.names; const results = currentLadderObj.results; const rungs = currentLadderObj.rungs;
+            let finalMapping = [];
+            for(let i=0; i<names.length; i++) {
+                let currentCol = i;
+                for(let j=0; j<rungs.length; j++) {
+                    if(rungs[j].col === currentCol) { currentCol++; } else if(rungs[j].col === currentCol - 1) { currentCol--; }
+                }
+                finalMapping.push(`<span class="text-blue">${names[i]}</span> ➔ <span class="text-red">${results[currentCol]}</span>`);
+            }
+            const canvas = document.getElementById('ladderCanvas'); const ctx = canvas.getContext('2d');
+            const w = canvas.width; const h = canvas.height; const colW = w / names.length;
+            ctx.clearRect(0, h-25, w, 25); 
+            for(let i=0; i<results.length; i++) {
+                let x = colW * i + colW/2; ctx.fillStyle = '#dc3545'; ctx.fillText(results[i], x, h - 10);
+            }
+            const resultBox = document.getElementById('ladderResultBox');
+            resultBox.innerHTML = `🎉 <b>결과 발표</b> 🎉<br><br>` + finalMapping.join('<br>');
+            resultBox.style.display = 'block';
+        }
+
+        function startBombGame() {
+            const names = getSelectedGameMembers();
+            const penalty = document.getElementById('bombPenalty').value || '벌칙 당첨!';
+            if(names.length < 2) { alert('체크박스/직접입력으로 참가자를 2명 이상 선택해주세요.'); return; }
+            
+            document.getElementById('ladderArea').style.display = 'none';
+            document.getElementById('bombArea').style.display = 'block';
+            const anim = document.getElementById('bombAnimation');
+            const res = document.getElementById('bombResultBox');
+            res.style.display = 'none';
+            
+            let count = 0;
+            anim.innerText = '💣 째깍...';
+            let interval = setInterval(() => {
+                count++;
+                anim.innerText = count % 2 === 0 ? '💣 째깍...' : '🔥 째깍...';
+                if(count > 5) { 
+                    clearInterval(interval);
+                    anim.innerText = '💥 펑!';
+                    const loserIndex = Math.floor(Math.random() * names.length);
+                    res.innerHTML = `🎉 <b>결과 발표</b> 🎉<br><br><span class="text-blue" style="font-size:18px;">${names[loserIndex]}</span> 님이<br><span class="text-red">${penalty}</span> 에 당첨되었습니다!`;
+                    res.style.display = 'block';
+                }
+            }, 300);
+        }
+
+        // 전체 렌더링
+        function renderAll() {
+            updateMemberSelects();
+
+            document.getElementById('ruleHistoryList').innerHTML = appData.rules.map((r, i) => `<div class="history-card"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><div class="history-date">${r.date} 개정</div><div><button class="btn-sm btn-edit" onclick="editRule(${i})">수정</button> <button class="btn-sm btn-delete" onclick="deleteRule(${i})">삭제</button></div></div><div>${r.text.replace(/\n/g, '<br>')}</div></div>`).join('');
+            
+            document.getElementById('memberList').innerHTML = appData.members.map((m, i) => `<tr><td>${m.name}</td><td>${m.role || '-'}</td><td><button class="btn-sm btn-edit" onclick="editMember(${i})">수정</button> <button class="btn-sm btn-delete" onclick="deleteMember(${i})">삭제</button></td></tr>`).join('');
+            let totalMembers = appData.members.length;
+            let roleCounts = {};
+            appData.members.forEach(m => { let r = (m.role && m.role.trim() !== '') ? m.role.trim() : '직책 미지정'; roleCounts[r] = (roleCounts[r] || 0) + 1; });
+            let roleTextStr = Object.entries(roleCounts).map(([role, count]) => `${role} ${count}명`).join(', ');
+            document.getElementById('memberSummaryBoard').innerHTML = `<div class="total-count">👥 총 인원: <span class="text-blue">${totalMembers}</span>명</div><div class="role-breakdown">${totalMembers > 0 ? `(${roleTextStr})` : '등록된 계원이 없습니다.'}</div>`;
+
+            document.getElementById('presidentList').innerHTML = appData.presidents.map((p, i) => {
+                let presidentDisplay = p.president || p.name || '-';
+                let secretaryDisplay = p.secretary || '-';
+                return `<tr><td>${p.year}</td><td class="text-bold">${presidentDisplay}</td><td>${secretaryDisplay}</td><td><button class="btn-sm btn-edit" onclick="editPresident(${i})">수정</button> <button class="btn-sm btn-delete" onclick="deletePresident(${i})">삭제</button></td></tr>`;
+            }).join('');
+            
+            let total = 0;
+            document.getElementById('fundList').innerHTML = appData.funds.map((f, i) => { let isIncome = f.type === 'income'; total += isIncome ? f.amount : -f.amount; let colorClass = isIncome ? 'text-green' : 'text-red'; return `<tr><td>${f.date}</td><td class="${colorClass}">${isIncome ? '수입' : '지출'}</td><td>${f.desc}</td><td class="${colorClass}">${f.amount.toLocaleString()}</td><td><button class="btn-sm btn-edit" onclick="editFund(${i})">수정</button> <button class="btn-sm btn-delete" onclick="deleteFund(${i})">삭제</button></td></tr>`; }).join('');
+            document.getElementById('totalFund').innerText = total.toLocaleString();
+            
+            document.getElementById('recordHistoryList').innerHTML = appData.records.map((r, i) => `<div class="history-card"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><div class="history-date">${r.date} | 장소: ${r.loc}</div><div><button class="btn-sm btn-edit" onclick="editRecord(${i})">수정</button> <button class="btn-sm btn-delete" onclick="deleteRecord(${i})">삭제</button></div></div><div style="font-size: 13px; color: #666; margin-bottom: 5px;">참석자: ${r.att}</div><div>${r.agenda.replace(/\n/g, '<br>')}</div></div>`).join('');
+
+            document.getElementById('upEventList').innerHTML = appData.upcomingEvents.map((e, i) => `<tr><td class="text-blue">${e.date}</td><td class="text-bold">${e.name}</td><td>${e.desc}</td><td><button class="btn-sm btn-edit" onclick="editUpEvent(${i})">수정</button> <button class="btn-sm btn-delete" onclick="deleteUpEvent(${i})">삭제</button></td></tr>`).join('');
+            document.getElementById('eventList').innerHTML = appData.events.map((e, i) => `<tr><td>${e.date}</td><td class="text-bold">${e.name}</td><td>${e.desc}</td><td class="text-bold">${e.amount.toLocaleString()}</td><td><button class="btn-sm btn-edit" onclick="editEvent(${i})">수정</button> <button class="btn-sm btn-delete" onclick="deleteEvent(${i})">삭제</button></td></tr>`).join('');
+
+            document.getElementById('agendaHistoryList').innerHTML = appData.agendas.map((a, i) => `<div class="history-card"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><div class="history-date">${a.date} | 발의자: <span class="text-bold">${a.name}</span></div><div><button class="btn-sm btn-edit" onclick="editAgenda(${i})">수정</button> <button class="btn-sm btn-delete" onclick="deleteAgenda(${i})">삭제</button></div></div><div style="margin-bottom: 5px;"><span class="text-blue">[안건 내용]</span><br>${a.content.replace(/\n/g, '<br>')}</div><div class="result-box"><span class="text-green">[회의 결과]</span><br>${(a.result || '결과 미등록 (진행 중)').replace(/\n/g, '<br>')}</div></div>`).join('');
+
+            if (!appData.photos) appData.photos = [];
+            document.getElementById('photoGallery').innerHTML = appData.photos.map((p, i) => `<div class="history-card" style="text-align: center;"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><div class="history-date">${p.date}</div><div><button class="btn-sm btn-edit" onclick="editPhoto(${i})">수정</button> <button class="btn-sm btn-delete" onclick="deletePhoto(${i})">삭제</button></div></div><img src="${p.image}" class="photo-img" alt="사진"><div style="margin-top: 10px; font-weight: bold; color: #111;">${p.desc || ''}</div></div>`).join('');
+
+            if (appData.nextMeeting) {
+                document.getElementById('nextMeetingInfo').style.display = 'block';
+                document.getElementById('nextMeetingDetails').innerHTML = `📅 일시: ${appData.nextMeeting.date}<br>📍 장소: ${appData.nextMeeting.loc}`;
+                document.getElementById('rsvpList').innerHTML = appData.members.map((m, i) => `<tr><td>${m.name}</td><td class="radio-group"><label><input type="radio" name="rsvp${i}" value="참석" ${m.rsvp==='참석'?'checked':''}>참석</label><label><input type="radio" name="rsvp${i}" value="불참" ${m.rsvp==='불참'?'checked':''}>불참</label></td><td><button class="btn-sm btn-confirm-sm" onclick="confirmSingleRsvp(${i})">확인하기</button></td></tr>`).join('');
+                let attendees = appData.members.filter(m => m.rsvp === '참석').map(m => m.name);
+                let absentees = appData.members.filter(m => m.rsvp === '불참').map(m => m.name);
+                let pendings = appData.members.filter(m => m.rsvp !== '참석' && m.rsvp !== '불참').map(m => m.name);
+                document.getElementById('rsvpResultBoard').innerHTML = `<h5>📊 실시간 투표 결과</h5><p><span class="text-green">참석 (${attendees.length}명):</span> ${attendees.length > 0 ? attendees.join(', ') : '-'}</p><p><span class="text-red">불참 (${absentees.length}명):</span> ${absentees.length > 0 ? absentees.join(', ') : '-'}</p><p><span style="color:#666; font-weight:bold;">미정 (${pendings.length}명):</span> ${pendings.length > 0 ? pendings.join(', ') : '-'}</p>`;
+            } else {
+                document.getElementById('nextMeetingInfo').style.display = 'none';
+            }
+        }
+
+        window.onload = () => {
+            document.getElementById('fundDate').value = getToday();
+            document.getElementById('recDate').value = getToday();
+            document.getElementById('eventDate').value = getToday();
+            document.getElementById('agendaDate').value = getToday();
+            let nextMonth = new Date(); nextMonth.setMonth(nextMonth.getMonth() + 1);
+            document.getElementById('upEventDate').value = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth()+1).padStart(2,'0')}-${String(nextMonth.getDate()).padStart(2,'0')}`;
+        };
+    </script>
+</body>
+</html>
